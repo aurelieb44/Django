@@ -1,0 +1,18 @@
+<p>Learning Log</p>
+
+
+{% extends "MainApp/base.html"%}
+
+{% block content %}
+
+<ul>
+    {% for t in topics %}
+
+    <li>{{ t }}</li>
+
+    {% empty %}
+    <li>No topics have been added yet.</li>
+    {% endfor %}
+</ul>
+
+{% endblock content %}
