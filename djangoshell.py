@@ -13,6 +13,7 @@ t = Topic.objects.get(id=1)
 print(t.text)
 print(t.date_added)
 
-entries = t.entry_set.all() # get all the entries for a specific topic
+entries = t.entry_set.all() # get all the entries for a specific topic # get data through a FK relationship 
+# topic is a FK attribute in the entry model
 for e in entries:
     print(e)

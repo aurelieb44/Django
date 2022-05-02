@@ -1,5 +1,5 @@
 from django import forms
-from .models import Topic
+from .models import Topic, Entry
 
 class TopicForm(forms.ModelForm):
     class Meta: # use the meta class because we already have a model defined called forms
@@ -9,3 +9,12 @@ class TopicForm(forms.ModelForm):
         model = Topic
         fields = ['text']
         labels = {'text':''}
+
+
+class EntryForm(forms.ModelForm):
+    class Meta: 
+        model = Entry
+        fields = ['text']
+        labels = {'text':''}
+        widgets = {'text':forms.Textarea(attrs={'cols':80})} 
+        # modifying the look of this box # changing it to be 80 columns so it looks like a big box on the webpage
