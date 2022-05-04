@@ -1,37 +1,55 @@
 from django.shortcuts import render, redirect
 from .forms import EntryForm, TopicForm
 from .models import Entry, Topic
+from django.contrib.auth.decorators import login_required
+from django.http import Http404 # raise an error if trying to access topic/1 if no topics for the user
 # Create your views here. # Home Page
 
 def index(request):
     return render(request, "MainApp/index.html") # rendering a page on your browser, using this template
 
+@login_required
 def topics(request):
-    topics = Topic.objects.order_by('-date_added') # add '-' before date for descending order
+    #topics = Topic.objects.order_by('-date_added') # add '-' before date for descending order
+    # showing all topics, but we only want to load the objects that belong to the user, so we add a filter to the object
+    # it has to match the id of the owner # find out who is making the request by saying request.user
+    topics = Topic.objects.filter(owner=request.user).order_by('-date_added')
     context = {'topics':topics} # dictionary # 'topics' is the key, is what you have to refer to in the html page 
     return render(request, 'MainApp/topics.html', context)
 
+@login_required
 def topic(request, topic_id): 
     topic = Topic.objects.get(id=topic_id) # Topic is a model
+    if topic.owner != request.user:
+        raise Http404
+
     entries = topic.entry_set.all() 
     context = {'topic': topic, 'entries': entries} 
     # interview question: dictionary, passes information from the view to use in the template
     # multiple objects that we need to pass # the value is what we are using in the view
     return render(request, 'MainApp/topic.html', context)
 
+@login_required
 def new_topic(request):
     if request.method != 'POST': 
         form = TopicForm() # load an empty form because not post request # pass the isntance to the webpage
     else: # it is a post request, we want to pass it on to the database
         form = TopicForm(data=request.POST) # I want to get the data from the post request into this variable called form
         if form.is_valid(): # if you define something as required in the model, and someone doesn't enter the info, the form won't submit
-            new_topic = form.save()
+            new_topic = form.save(commit=False) # creates object but hasn't saved it to db
+            new_topic.owner = request.user
+            new_topic.save()
             return redirect('MainApp:topics') # redirect them to the topics page
     context = {'form':form}
     return render(request, 'MainApp/new_topic.html', context)
 
+@login_required
 def new_entry(request, topic_id): # topic_id to identify what topic it is # topic_id is just an integer
     topic = Topic.objects.get(id=topic_id) # topic object
+
+    if topic.owner != request.user:
+        raise Http404
+        
     if request.method != 'POST':
         form = EntryForm()
     else:
@@ -49,10 +67,14 @@ def new_entry(request, topic_id): # topic_id to identify what topic it is # topi
     context = {'form':form, 'topic':topic} # we pass topic and form
     return render(request, 'MainApp/new_entry.html', context)
 
+@login_required
 def edit_entry(request, entry_id):
     entry = Entry.objects.get(id=entry_id) # calling the entry object/model
     topic = entry.topic # calling the entry of that topic # topic is an attribute 
     # lower case entry because this is the avriable that is storing that particular object
+    if topic.owner != request.user:
+        raise Http404
+
     if request.method != 'POST':
         form = EntryForm(instance=entry) # we want to grab that particular instance # will load existing data for that entry
     else:
